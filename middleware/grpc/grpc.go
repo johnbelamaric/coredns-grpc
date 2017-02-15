@@ -13,7 +13,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/miekg/coredns/core/dnsserver"
-	"github.com/infobloxopen/coredns-grpc/middleware/grpc/pb"
+	"github.com/miekg/coredns/middleware/proxy/pb"
 )
 
 type grpc struct {

@@ -16,7 +16,7 @@ tls is configured, in which case it is `:443`.
 
 ~~~
 grpc [ADDRESS] {
-	tls cert key cacert
+	tls CERT KEY CA
 }
 ~~~
 
