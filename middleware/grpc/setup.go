@@ -3,9 +3,9 @@ package grpc
 import (
 	"errors"
 
-	"github.com/miekg/coredns/core/dnsserver"
-	"github.com/miekg/coredns/middleware"
-	"github.com/miekg/coredns/middleware/pkg/tls"
+	"github.com/coredns/coredns/core/dnsserver"
+	"github.com/coredns/coredns/middleware"
+	"github.com/coredns/coredns/middleware/pkg/tls"
 
 	"github.com/mholt/caddy"
 )

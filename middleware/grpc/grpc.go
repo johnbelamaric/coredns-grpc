@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/peer"
 
 	"github.com/miekg/dns"
-	"github.com/miekg/coredns/core/dnsserver"
-	"github.com/miekg/coredns/middleware/proxy/pb"
+	"github.com/coredns/coredns/core/dnsserver"
+	"github.com/coredns/coredns/middleware/proxy/pb"
 )
 
 type grpc struct {
