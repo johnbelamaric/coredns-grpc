@@ -50,10 +50,10 @@ func (g *grpc) Startup() error {
 	}
 
 	if g.trace != nil {
-		filter := func(parentSpanCtx opentracing.SpanContext, method string, req, resp interface{}) bool {
+		include := func(parentSpanCtx opentracing.SpanContext, method string, req, resp interface{}) bool {
 			return parentSpanCtx != nil
 		}
-		intercept := otgrpc.OpenTracingServerInterceptor(g.trace.Tracer(), otgrpc.SpanFilter(filter))
+		intercept := otgrpc.OpenTracingServerInterceptor(g.trace.Tracer(), otgrpc.IncludeSpan(include))
 		g.server = grpclib.NewServer(grpclib.UnaryInterceptor(intercept))
 	} else {
 		g.server = grpclib.NewServer()
