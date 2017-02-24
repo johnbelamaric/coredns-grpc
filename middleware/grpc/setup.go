@@ -2,10 +2,12 @@ package grpc
 
 import (
 	"errors"
+	"log"
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/middleware"
 	"github.com/coredns/coredns/middleware/pkg/tls"
+	"github.com/coredns/coredns/middleware/trace"
 
 	"github.com/mholt/caddy"
 )
@@ -39,6 +41,14 @@ func grpcParse(c *caddy.Controller) (*grpc, error) {
 	config := dnsserver.GetConfig(c)
 
 	g := &grpc{config: config}
+	mw := dnsserver.GetMiddleware(c, "trace")
+	if mw != nil {
+		if t, ok := mw.(trace.Trace); ok {
+			g.trace = t
+		} else {
+			log.Printf("[WARNING] Wrong type for trace middleware reference: %s", mw)
+		}
+	}
 
 	for c.Next() {
 		addr := c.RemainingArgs()
