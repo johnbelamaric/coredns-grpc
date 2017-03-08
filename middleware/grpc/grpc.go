@@ -11,9 +11,15 @@ import (
 	grpclib "google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 
-	"github.com/miekg/dns"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/middleware/proxy/pb"
+	"github.com/coredns/coredns/middleware/trace"
+
+	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
+
+	"github.com/miekg/dns"
+
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 type grpc struct {
@@ -21,6 +27,7 @@ type grpc struct {
 	tls    *tls.Config
 	server *grpclib.Server
 	config *dnsserver.Config
+	trace  trace.Trace
 }
 
 func (g *grpc) Startup() error {
@@ -42,7 +49,15 @@ func (g *grpc) Startup() error {
 		return err
 	}
 
-	g.server = grpclib.NewServer()
+	if g.trace != nil {
+		onlyIfParent := func(parentSpanCtx opentracing.SpanContext, method string, req, resp interface{}) bool {
+			return parentSpanCtx != nil
+		}
+		intercept := otgrpc.OpenTracingServerInterceptor(g.trace.Tracer(), otgrpc.IncludingSpans(onlyIfParent))
+		g.server = grpclib.NewServer(grpclib.UnaryInterceptor(intercept))
+	} else {
+		g.server = grpclib.NewServer()
+	}
 	pb.RegisterDnsServiceServer(g.server, g)
 	go func() {
 		g.server.Serve(ln)
@@ -57,19 +72,19 @@ func (g *grpc) Query(ctx context.Context, in *pb.DnsPacket) (*pb.DnsPacket, erro
 		return nil, err
 	}
 
-	p, ok := peer.FromContext(ctx);
+	p, ok := peer.FromContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("Could not find peer in gRPC context.")
 	}
-	a, ok := p.Addr.(*net.TCPAddr);
+	a, ok := p.Addr.(*net.TCPAddr)
 	if !ok {
 		return nil, fmt.Errorf("gRPC Peer address is not a TCPAddr: %v", p.Addr)
 	}
-	l := &net.IPAddr{IP:net.ParseIP(g.addr)}
-	r := &net.IPAddr{IP:a.IP}
+	l := &net.IPAddr{IP: net.ParseIP(g.addr)}
+	r := &net.IPAddr{IP: a.IP}
 
 	w := &response{localAddr: l, remoteAddr: r}
-	g.config.Server.ServeDNS(w, msg)
+	g.config.Server.ServeDNSWithContext(ctx, w, msg)
 
 	packed, err := w.Msg.Pack()
 	if err != nil {
@@ -86,9 +101,9 @@ func (g *grpc) Shutdown() error {
 }
 
 type response struct {
-	localAddr	net.Addr
-	remoteAddr	net.Addr
-	Msg		*dns.Msg
+	localAddr  net.Addr
+	remoteAddr net.Addr
+	Msg        *dns.Msg
 }
 
 func (r *response) LocalAddr() net.Addr {
