@@ -84,7 +84,7 @@ func (g *grpc) Query(ctx context.Context, in *pb.DnsPacket) (*pb.DnsPacket, erro
 	r := &net.IPAddr{IP: a.IP}
 
 	w := &response{localAddr: l, remoteAddr: r}
-	g.config.Server.ServeDNSWithContext(ctx, w, msg)
+	g.config.Server.ServeDNS(ctx, w, msg)
 
 	packed, err := w.Msg.Pack()
 	if err != nil {
